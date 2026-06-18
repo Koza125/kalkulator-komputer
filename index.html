@@ -25,6 +25,7 @@
     --text-dim: #6c7b72;
     --error: #d1593f;
     --error-bg: #221512;
+    --success: #52a874;
 
     --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -449,6 +450,70 @@
     color: var(--text-dim);
   }
 
+  /* ---------- game requirements comparison ---------- */
+  .games-comparison {
+    margin-top: 32px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .games-header {
+    background: var(--surface-2);
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .games-header h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .game-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-soft);
+    gap: 16px;
+  }
+  .game-row:last-child {
+    border-bottom: none;
+  }
+  .game-info {
+    flex: 1;
+  }
+  .game-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .game-specs {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .game-status {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .status-pass {
+    background: rgba(82, 168, 116, 0.15);
+    color: var(--success);
+    border: 1px solid var(--success);
+  }
+  .status-fail {
+    background: rgba(209, 89, 63, 0.15);
+    color: var(--error);
+    border: 1px solid var(--error);
+  }
+
   /* footer notes */
   .notes{
     margin-top: 28px;
@@ -499,6 +564,14 @@
         </div>
       </div>
     </section>
+
+    <section class="games-comparison" id="games-comparison" style="display: none;">
+      <div class="games-header">
+        <h3>Weryfikacja z ZALECANYMI wymaganiami gier</h3>
+      </div>
+      <div id="games-list">
+        </div>
+    </section>
   </main>
 
   <footer class="notes">
@@ -517,166 +590,147 @@
   "use strict";
 
   /* ==========================================
-     BAZA WIEDZY (przeniesiona z komputer.pl)
+     BAZA WIEDZY
      ========================================== */
 
-  // cpu: id, name, socket, power(W), price(zł)
   const CPUS = [
-    {id:'c1',  name:'AMD Ryzen 5 5600X',        socket:'am4',     power:65,  price:649},
-    {id:'c2',  name:'AMD Ryzen 7 5800X',        socket:'am4',     power:105, price:899},
-    {id:'c3',  name:'AMD Ryzen 7 5700X',        socket:'am4',     power:65,  price:799},
-    {id:'c4',  name:'AMD Ryzen 9 5900X',        socket:'am4',     power:105, price:1499},
-    {id:'c5',  name:'AMD Ryzen 9 5950X',        socket:'am4',     power:105, price:2499},
-    {id:'c6',  name:'AMD Ryzen 5 7600X',        socket:'am5',     power:105, price:899},
-    {id:'c7',  name:'AMD Ryzen 7 7700X',        socket:'am5',     power:105, price:1399}, // power uzupełnione (105W, jak w oryginale AMD) — w pliku .pl ten wiersz miał błędną liczbę pól
-    {id:'c8',  name:'AMD Ryzen 9 7900X',        socket:'am5',     power:170, price:2499},
-    {id:'c9',  name:'AMD Ryzen 9 7950X',        socket:'am5',     power:170, price:3499},
-    {id:'c10', name:'AMD Ryzen 7 7800X3D',      socket:'am5',     power:120, price:1899},
-    {id:'c11', name:'Intel Core i3-12100F',     socket:'lga1700', power:58,  price:399},
-    {id:'c12', name:'Intel Core i5-12400F',     socket:'lga1700', power:65,  price:669},
-    {id:'c13', name:'Intel Core i5-12600K',     socket:'lga1700', power:125, price:999},
-    {id:'c14', name:'Intel Core i5-13600K',     socket:'lga1700', power:181, price:1101},
-    {id:'c15', name:'Intel Core i7-13700K',     socket:'lga1700', power:253, price:1799},
-    {id:'c16', name:'Intel Core i9-13900K',     socket:'lga1700', power:253, price:2499},
-    {id:'c18', name:'Intel Core i5-10600K',     socket:'lga1200', power:125, price:699},
-    {id:'c20', name:'Intel Core i9-10900K',     socket:'lga1200', power:125, price:1399},
+    {id:'c1',  name:'AMD Ryzen 5 5600X',        socket:'am4',     power:65,  price:649,  tier: 2},
+    {id:'c2',  name:'AMD Ryzen 7 5800X',        socket:'am4',     power:105, price:899,  tier: 3},
+    {id:'c3',  name:'AMD Ryzen 7 5700X',        socket:'am4',     power:65,  price:799,  tier: 3},
+    {id:'c4',  name:'AMD Ryzen 9 5900X',        socket:'am4',     power:105, price:1499, tier: 4},
+    {id:'c5',  name:'AMD Ryzen 9 5950X',        socket:'am4',     power:105, price:2499, tier: 4},
+    {id:'c6',  name:'AMD Ryzen 5 7600X',        socket:'am5',     power:105, price:899,  tier: 3},
+    {id:'c7',  name:'AMD Ryzen 7 7700X',        socket:'am5',     power:105, price:1399, tier: 4},
+    {id:'c8',  name:'AMD Ryzen 9 7900X',        socket:'am5',     power:170, price:2499, tier: 5},
+    {id:'c9',  name:'AMD Ryzen 9 7950X',        socket:'am5',     power:170, price:3499, tier: 5},
+    {id:'c10', name:'AMD Ryzen 7 7800X3D',      socket:'am5',     power:120, price:1899, tier: 5},
+    {id:'c11', name:'Intel Core i3-12100F',     socket:'lga1700', power:58,  price:389,  tier: 1},
+    {id:'c12', name:'Intel Core i5-12400F',     socket:'lga1700', power:65,  price:629,  tier: 2},
+    {id:'c13', name:'Intel Core i5-13400F',     socket:'lga1700', power:65,  price:849,  tier: 3},
+    {id:'c14', name:'Intel Core i5-13600K',     socket:'lga1700', power:125, price:1349, tier: 4},
+    {id:'c15', name:'Intel Core i7-13700K',     socket:'lga1700', power:125, price:1799, tier: 5},
+    {id:'c16', name:'Intel Core i9-13900K',     socket:'lga1700', power:150, price:2599, tier: 5},
+    {id:'c17', name:'Intel Core i5-14600K',     socket:'lga1700', power:125, price:1449, tier: 4},
+    {id:'c18', name:'Intel Core i7-14700K',     socket:'lga1700', power:125, price:1999, tier: 5},
+    {id:'c19', name:'Intel Core i9-14900K',     socket:'lga1700', power:150, price:2699, tier: 5}
   ];
 
-  // motherboard: id, name, socket, ramType, price
   const MOBOS = [
-    {id:'m1',  name:'MSI MAG B550 TOMAHAWK',            socket:'am4',     ramType:'ddr4', price:1104},
-    {id:'m2',  name:'Gigabyte B650 GAMING X',            socket:'am5',     ramType:'ddr5', price:579},
-    {id:'m3',  name:'ASUS PRIME B660M-A',                socket:'lga1700', ramType:'ddr4', price:523},
-    {id:'m4',  name:'MSI PRO Z790-P',                    socket:'lga1700', ramType:'ddr5', price:599},
-    {id:'m5',  name:'ASUS ROG STRIX B550-F GAMING',      socket:'am4',     ramType:'ddr4', price:850},
-    {id:'m6',  name:'Gigabyte B550 AORUS ELITE V2',      socket:'am4',     ramType:'ddr4', price:620},
-    {id:'m7',  name:'MSI B550-A PRO',                    socket:'am4',     ramType:'ddr4', price:480},
-    {id:'m8',  name:'ASUS TUF GAMING B650-PLUS',         socket:'am5',     ramType:'ddr5', price:950},
-    {id:'m9',  name:'Gigabyte X670 AORUS ELITE AX',      socket:'am5',     ramType:'ddr5', price:1390},
-    {id:'m10', name:'MSI MAG B650 TOMAHAWK WIFI',        socket:'am5',     ramType:'ddr5', price:1200},
-    {id:'m11', name:'ASUS PRIME B650M-A WIFI',           socket:'am5',     ramType:'ddr5', price:780},
-    {id:'m12', name:'ASUS PRIME Z690-P',                 socket:'lga1700', ramType:'ddr5', price:890},
-    {id:'m13', name:'MSI Z690-A PRO',                    socket:'lga1700', ramType:'ddr4', price:750},
-    {id:'m14', name:'Gigabyte Z790 AORUS ELITE AX',      socket:'lga1700', ramType:'ddr5', price:1450},
-    {id:'m15', name:'ASUS ROG STRIX Z790-E GAMING WIFI', socket:'lga1700', ramType:'ddr5', price:2200},
-    {id:'m16', name:'MSI PRO B760M-A',                   socket:'lga1700', ramType:'ddr4', price:520},
-    {id:'m17', name:'Gigabyte B760 DS3H',                socket:'lga1700', ramType:'ddr4', price:450},
-    {id:'m18', name:'ASUS PRIME H610M-K',                socket:'lga1700', ramType:'ddr4', price:350},
-    {id:'m19', name:'ASRock B550M Steel Legend',         socket:'am4',     ramType:'ddr4', price:650},
-    {id:'m20', name:'ASRock B650M Pro RS',               socket:'am5',     ramType:'ddr5', price:700},
+    {id:'m1',  name:'ASUS PRIME B450M-K II',    socket:'am4',     ramType:'ddr4', price:290},
+    {id:'m2',  name:'Gigabyte B450M DS3H V2',   socket:'am4',     ramType:'ddr4', price:310},
+    {id:'m3',  name:'MSI B450-A PRO MAX',       socket:'am4',     ramType:'ddr4', price:360},
+    {id:'m4',  name:'ASUS TUF GAMING B550-PLUS',socket:'am4',     ramType:'ddr4', price:580},
+    {id:'m5',  name:'Gigabyte B550 AORUS ELITE V2', socket:'am4',  ramType:'ddr4', price:620},
+    {id:'m6',  name:'MSI B550-A PRO',           socket:'am4',     ramType:'ddr4', price:480},
+    {id:'m7',  name:'ASUS TUF GAMING B650-PLUS',socket:'am5',     ramType:'ddr5', price:950},
+    {id:'m8',  name:'Gigabyte X670 AORUS ELITE AX', socket:'am5', ramType:'ddr5', price:1390},
+    {id:'m9',  name:'MSI MAG B650 TOMAHAWK WIFI',socket:'am5',    ramType:'ddr5', price:1200},
+    {id:'m10', name:'ASUS PRIME B650M-A WIFI',  socket:'am5',     ramType:'ddr5', price:780},
+    {id:'m11', name:'ASUS PRIME Z690-P',        socket:'lga1700', ramType:'ddr5', price:890},
+    {id:'m12', name:'MSI Z690-A PRO',           socket:'lga1700', ramType:'ddr4', price:750},
+    {id:'m13', name:'Gigabyte Z790 AORUS ELITE AX', socket:'lga1700', ramType:'ddr5', price:1450},
+    {id:'m14', name:'ASUS ROG STRIX Z790-E GAMING WIFI', socket:'lga1700', ramType:'ddr5', price:2200},
+    {id:'m15', name:'MSI PRO B760M-A',          socket:'lga1700', ramType:'ddr4', price:520},
+    {id:'m16', name:'Gigabyte B760 DS3H',       socket:'lga1700', ramType:'ddr4', price:450},
+    {id:'m17', name:'ASUS PRIME H610M-K',       socket:'lga1700', ramType:'ddr4', price:350},
+    {id:'m18', name:'ASRock B550M Steel Legend',socket:'am4',     ramType:'ddr4', price:650},
+    {id:'m19', name:'ASRock B650M Pro RS',      socket:'am5',     ramType:'ddr5', price:700}
   ];
 
-  // ram: id, name, ramType, price
   const RAMS = [
-    {id:'r1',  name:'Corsair Vengeance LPX 16GB',           ramType:'ddr4', price:699},
-    {id:'r2',  name:'Lexar Ares RGB 32GB',                  ramType:'ddr5', price:1798},
-    {id:'r3',  name:'Kingston FURY Beast 16GB',             ramType:'ddr4', price:750},
-    {id:'r4',  name:'G.Skill Ripjaws V 16GB',                ramType:'ddr4', price:729},
-    {id:'r5',  name:'G.Skill Trident Z5 RGB 32GB',           ramType:'ddr5', price:1899},
-    {id:'r6',  name:'Crucial Ballistix 16GB',                ramType:'ddr4', price:699},
-    {id:'r7',  name:'Crucial Pro 32GB',                      ramType:'ddr5', price:1599},
-    {id:'r8',  name:'Patriot Viper Steel 16GB',              ramType:'ddr4', price:679},
-    {id:'r9',  name:'Patriot Viper Venom 32GB',              ramType:'ddr5', price:1749},
-    {id:'r10', name:'ADATA XPG Gammix D30 16GB',             ramType:'ddr4', price:649},
-    {id:'r11', name:'ADATA XPG Lancer 32GB',                 ramType:'ddr5', price:1699},
-    {id:'r13', name:'TeamGroup T-Force Delta RGB 32GB',      ramType:'ddr5', price:1829},
-    {id:'r14', name:'Corsair Dominator Platinum RGB 32GB',   ramType:'ddr5', price:2199},
-    {id:'r15', name:'Kingston FURY Renegade 32GB',           ramType:'ddr5', price:1999},
-    {id:'r16', name:'G.Skill Aegis 16GB',                    ramType:'ddr4', price:599},
-    {id:'r17', name:'Crucial DDR5 16GB Single Module',       ramType:'ddr5', price:799},
-    {id:'r18', name:'Lexar Thor 32GB',                       ramType:'ddr5', price:1649},
-    {id:'r19', name:'Corsair Vengeance LPX 32GB',            ramType:'ddr4', price:1099},
-    {id:'r20', name:'Kingston FURY Beast 64GB',              ramType:'ddr5', price:3499},
+    {id:'r1',  name:'Corsair Vengeance LPX 16GB (2x8GB) DDR4', ramType:'ddr4', size:16, price:180},
+    {id:'r2',  name:'G.Skill Aegis 16GB (2x8GB) DDR4',         ramType:'ddr4', size:16, price:165},
+    {id:'r3',  name:'Kingston FURY Beast 32GB (2x16GB) DDR4',  ramType:'ddr4', size:32, price:340},
+    {id:'r4',  name:'Corsair Vengeance RGB 32GB (2x16GB) DDR5',ramType:'ddr5', size:32, price:520},
+    {id:'r5',  name:'Kingston FURY Renegade 32GB (2x16GB) DDR5',ramType:'ddr5', size:32, price:610},
+    {id:'r6',  name:'G.Skill Flare X5 32GB (2x16GB) DDR5',     ramType:'ddr5', size:32, price:490},
+    {id:'r7',  name:'Lexar Thor DDR4 16GB (2x8GB)',            ramType:'ddr4', size:16, price:155},
+    {id:'r8',  name:'Team Group Elite DDR5 16GB (2x8GB)',       ramType:'ddr5', size:16, price:240}
   ];
 
-  // gpu: id, name, power(W), price
   const GPUS = [
-    {id:'g1',  name:'AMD Radeon RX 6600 8GB',            power:132, price:1100},
-    {id:'g2',  name:'Intel Arc A750 8GB',                power:225, price:1200},
-    {id:'g3',  name:'AMD Radeon RX 7600 8GB',            power:165, price:1450},
-    {id:'g4',  name:'NVIDIA GeForce RTX 3060 12GB',      power:170, price:1862},
-    {id:'g5',  name:'AMD Radeon RX 6650 XT 8GB',         power:176, price:1500},
-    {id:'g6',  name:'Intel Arc A770 16GB',               power:225, price:1500},
-    {id:'g7',  name:'NVIDIA GeForce RTX 4060 8GB',       power:115, price:1700},
-    {id:'g8',  name:'AMD Radeon RX 7600 XT 16GB',        power:190, price:1800},
-    {id:'g9',  name:'AMD Radeon RX 6700 XT 12GB',        power:230, price:1507},
-    {id:'g10', name:'AMD Radeon RX 6750 XT 12GB',        power:250, price:1900},
-    {id:'g12', name:'NVIDIA GeForce RTX 4060 Ti 16GB',   power:165, price:2500},
-    {id:'g13', name:'AMD Radeon RX 7700 XT 12GB',        power:245, price:2700},
-    {id:'g14', name:'NVIDIA GeForce RTX 4070 12GB',      power:200, price:3438},
-    {id:'g15', name:'AMD Radeon RX 7800 XT 16GB',        power:263, price:3200},
-    {id:'g16', name:'NVIDIA GeForce RTX 4070 SUPER',     power:220, price:3800},
-    {id:'g17', name:'AMD Radeon RX 7900 GRE',            power:260, price:3600},
-    {id:'g18', name:'NVIDIA GeForce RTX 4070 Ti',        power:285, price:4200},
-    {id:'g19', name:'AMD Radeon RX 7900 XT',             power:315, price:4400},
-    {id:'g20', name:'NVIDIA GeForce RTX 5070',           power:250, price:4500},
+    {id:'g1',  name:'NVIDIA GeForce GTX 1650',      power:75,  price:650,  tier: 1},
+    {id:'g2',  name:'AMD Radeon RX 6500 XT',        power:107, price:720,  tier: 1},
+    {id:'g3',  name:'AMD Radeon RX 6600',           power:132, price:999,  tier: 2},
+    {id:'g4',  name:'NVIDIA GeForce RTX 3050 8GB',  power:130, price:1050, tier: 2},
+    {id:'g5',  name:'NVIDIA GeForce RTX 4060',      power:115, price:1350, tier: 3},
+    {id:'g6',  name:'AMD Radeon RX 7600',           power:165, price:1250, tier: 3},
+    {id:'g7',  name:'NVIDIA GeForce RTX 4060 Ti',   power:160, price:1850, tier: 4},
+    {id:'g8',  name:'AMD Radeon RX 6700 XT',        power:230, price:1600, tier: 4},
+    {id:'g9',  name:'AMD Radeon RX 7800 XT',        power:263, price:2300, tier: 5},
+    {id:'g10', name:'NVIDIA GeForce RTX 4070 SUPER',power:220, price:2850, tier: 5},
+    {id:'g11', name:'NVIDIA GeForce RTX 4080 SUPER',power:320, price:4700, tier: 6},
+    {id:'g12', name:'NVIDIA GeForce RTX 4090',      power:450, price:8499, tier: 7}
   ];
 
-  // psu: id, name, maxPower(W), price
   const PSUS = [
-    {id:'p2',  name:'Corsair RM750x 750W',                 maxPower:750, price:579},
-    {id:'p3',  name:'be quiet! Pure Power 11 500W',        maxPower:500, price:329},
-    {id:'p4',  name:'be quiet! Straight Power 11 650W',    maxPower:650, price:549},
-    {id:'p5',  name:'Seasonic Focus GX-550 550W',          maxPower:550, price:429},
-    {id:'p6',  name:'Seasonic Focus GX-750 750W',          maxPower:750, price:599},
-    {id:'p7',  name:'Cooler Master MWE Gold 650W',         maxPower:650, price:359},
-    {id:'p8',  name:'Cooler Master MWE Bronze 550W',       maxPower:550, price:249},
-    {id:'p9',  name:'EVGA SuperNOVA 650 G5',               maxPower:650, price:499},
-    {id:'p10', name:'EVGA 600 W1 600W',                    maxPower:600, price:239},
-    {id:'p11', name:'Corsair CV550 550W',                  maxPower:550, price:229},
-    {id:'p12', name:'Corsair CX650M 650W',                 maxPower:650, price:349},
-    {id:'p13', name:'Thermaltake Toughpower GF1 750W',     maxPower:750, price:629},
-    {id:'p14', name:'Thermaltake Smart 600W',               maxPower:600, price:219},
-    {id:'p19', name:'NZXT C650 650W',                       maxPower:650, price:549},
+    {id:'p1',  name:'Corsair CV550 550W',           maxPower:550, price:220},
+    {id:'p2',  name:'SilentiumPC Vero L3 600W',     maxPower:600, price:250},
+    {id:'p3',  name:'be quiet! Pure Power 11 600W', maxPower:600, price:340},
+    {id:'p4',  name:'Corsair RM750x 750W',          maxPower:750, price:580},
+    {id:'p5',  name:'be quiet! Straight Power 11 750W', maxPower:750, price:610},
+    {id:'p6',  name:'Seasonic Focus GX-850 850W',   maxPower:850, price:680},
+    {id:'p7',  name:'MSI MAG A650BN 650W',          maxPower:650, price:280},
+    {id:'p8',  name:'Gigabyte UD850GM 850W',        maxPower:850, price:420}
   ];
 
-  const SOCKET_LABEL = {am4:'AM4', am5:'AM5', lga1700:'LGA1700', lga1200:'LGA1200'};
-  const RAM_LABEL = {ddr4:'DDR4', ddr5:'DDR5'};
+  const SOCKET_LABEL = { am4: 'AM4', am5: 'AM5', lga1700: 'LGA1700' };
+  const RAM_LABEL = { ddr4: 'DDR4', ddr5: 'DDR5' };
 
   /* ==========================================
-     REGUŁY LOGICZNE (port z zbuduj_pc/5)
+     LOGIKA WYSZUKIWANIA
      ========================================== */
 
-  function findBestPC(maxBudget){
-    let bestGpuPrice = -1, bestCpuPrice = -1, bestTotal = -1;
+  function findBestConfiguration(budget){
     let best = null;
     let combosChecked = 0;
     let validInBudget = 0;
 
-    for (const cpu of CPUS){
-      const compatMobos = MOBOS.filter(m => m.socket === cpu.socket);
-      for (const mobo of compatMobos){
-        const compatRams = RAMS.filter(r => r.ramType === mobo.ramType);
-        for (const ram of compatRams){
-          for (const gpu of GPUS){
-            const requiredPSU = (cpu.power + gpu.power) * 2;
-            for (const psu of PSUS){
-              combosChecked++;
-              if (psu.maxPower < requiredPSU) continue;
+    for (let c of CPUS) {
+      for (let m of MOBOS) {
+        if (m.socket !== c.socket) continue;
+        for (let r of RAMS) {
+          if (r.ramType !== m.ramType) continue;
+          for (let g of GPUS) {
+            combosChecked++;
+            const currentPartsPrice = c.price + m.price + r.price + g.price;
+            if (g.price > currentPartsPrice * 0.50) continue;
 
-              const total = cpu.price + mobo.price + ram.price + gpu.price + psu.price;
-              if (total > maxBudget) continue;
-              if (gpu.price > total * 0.5) continue;
+            const requiredPSU = (c.power + g.power) * 2 ;
+
+            for (let p of PSUS) {
+              if (p.maxPower < requiredPSU) continue;
+
+              const total = currentPartsPrice + p.price;
+              if (total > budget) continue;
 
               validInBudget++;
 
-              let better = false;
-              if (gpu.price > bestGpuPrice) better = true;
-              else if (gpu.price === bestGpuPrice && cpu.price > bestCpuPrice) better = true;
-              else if (gpu.price === bestGpuPrice && cpu.price === bestCpuPrice && total > bestTotal) better = true;
+              let replace = false;
+              if (!best) {
+                replace = true;
+              } else {
+                if (g.price > best.gpu.price) {
+                  replace = true;
+                } else if (g.price === best.gpu.price) {
+                  if (c.price > best.cpu.price) {
+                    replace = true;
+                  } else if (c.price === best.cpu.price) {
+                    if (total > best.total) {
+                      replace = true;
+                    }
+                  }
+                }
+              }
 
-              if (better){
-                bestGpuPrice = gpu.price;
-                bestCpuPrice = cpu.price;
-                bestTotal = total;
-                best = { cpu, mobo, ram, gpu, psu, total, requiredPSU };
+              if (replace) {
+                best = { cpu: c, mobo: m, ram: r, gpu: g, psu: p, total, requiredPSU };
               }
             }
           }
         }
       }
     }
-
     return { best, combosChecked, validInBudget };
   }
 
@@ -686,32 +740,77 @@
 
   const fmt = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 });
   const zl = n => fmt.format(n) + ' zł';
-
   const schematicWrap = document.getElementById('schematic-wrap');
+  const gamesComparison = document.getElementById('games-comparison');
+  const gamesList = document.getElementById('games-list');
   const fieldMsg = document.getElementById('field-msg');
   const form = document.getElementById('budget-form');
   const input = document.getElementById('budget-input');
 
   function renderEmpty(){
-    schematicWrap.innerHTML =
-      '<div class="schematic"><div class="empty-state">' +
-        '<div class="glyph">CZEKAM&nbsp;NA&nbsp;BUDŻET</div>' +
-        '<p>Wprowadź budżet i kliknij „Znajdź zestaw”, żeby zobaczyć dobraną konfigurację.</p>' +
+    schematicWrap.innerHTML = '<div class="schematic"><div class="empty-state">' +
+      '<div class="glyph">CZEKAM&nbsp;NA&nbsp;BUDŻET</div>' +
+      '<p>Wprowadź budżet i kliknij „Znajdź zestaw”, żeby zobaczyć dobraną konfigurację.</p>' +
       '</div></div>';
+    gamesComparison.style.display = 'none';
   }
 
   function renderError(budget, combosChecked){
-    schematicWrap.innerHTML =
-      '<div class="schematic"><div class="bios-error">' +
-        '<p class="bios-line prompt">SPRAWDZANIE_ZGODNOSCI... OK</p>' +
-        '<p class="bios-line prompt">SPRAWDZANIE_WYMAGAN_ZASILANIA... OK</p>' +
-        '<p class="bios-line prompt">SZUKANIE_KONFIGURACJI_W_BUDZECIE... <strong>BRAK</strong></p>' +
-        '<p class="bios-line prompt">ERR_BUDGET_TOO_LOW</p>' +
-        '<p class="bios-line">Sprawdzono ' + fmt.format(combosChecked) + ' kombinacji podzespołów — żadna nie mieści się ' +
-        'w budżecie ' + zl(budget) + ' przy zachowanej zgodności gniazda, typu RAM, wymaganej mocy zasilania ' +
-        '(zapas ×1,5) i limicie 50% ceny zestawu na kartę graficzną.</p>' +
-        '<p class="bios-line">Zwiększ budżet i spróbuj ponownie.<span class="cursor"></span></p>' +
+    schematicWrap.innerHTML = '<div class="schematic"><div class="bios-error">' +
+      '<p class="bios-line prompt">SPRAWDZANIE_ZGODNOSCI... OK</p>' +
+      '<p class="bios-line prompt">SPRAWDZANIE_WYMAGAN_ZASILANIA... OK</p>' +
+      '<p class="bios-line prompt">SZUKANIE_KONFIGURACJI_W_BUDZECIE... <strong>BRAK</strong></p>' +
+      '<p class="bios-line prompt">ERR_BUDGET_TOO_LOW</p>' +
+      '<p class="bios-line">Sprawdzono ' + fmt.format(combosChecked) + ' kombinacji podzespołów — żadna nie mieści się ' +
+      'w budżecie ' + zl(budget) + ' przy zachowanej zgodności gniazda, typu RAM, wymaganej mocy zasilania ' +
+      '(zapas ×1,5) i limicie 50% ceny zestawu na kartę graficzną.</p>' +
+      '<p class="bios-line">Zwiększ budżet i spróbuj ponownie.<span class="cursor"></span></p>' +
       '</div></div>';
+    gamesComparison.style.display = 'none';
+  }
+
+  function checkGameRequirements(best) {
+    const ramSize = best.ram.size || 16;
+    const gpuTier = best.gpu.tier || 1; 
+    const cpuTier = best.cpu.tier || 1;
+
+    const games = [
+      {
+        title: "Counter-Strike 2",
+        specs: "Zalecane: Procesor Core i5-7500 / Ryzen 5 1600, 16 GB RAM, GTX 1060 / RX 580",
+        passed: ramSize >= 16 && gpuTier >= 2 && cpuTier >= 2
+      },
+      {
+        title: "Cyberpunk 2077",
+        specs: "Zalecane: Core i7-12700 / Ryzen 7 7800X, 16 GB RAM, RTX 2060 SUPER / RX 5700 XT",
+        passed: ramSize >= 16 && gpuTier >= 3 && cpuTier >= 3
+      },
+      {
+        title: "Cities: Skylines II",
+        specs: "Zalecane: Core i5-12600K / Ryzen 7 5800X, 32 GB RAM, RTX 3080 (10GB) / RX 6800 XT",
+        passed: ramSize >= 32 && gpuTier >= 5 && cpuTier >= 3
+      },
+      {
+        title: "Forza Horizon 6",
+        specs: "Zalecane: Core i7-10700K / Ryzen 7 3800XT, 32 GB RAM, RTX 3070 Ti / RX 6800",
+        passed: ramSize >= 32 && gpuTier >= 4 && cpuTier >= 3
+      }
+    ];
+
+    let html = '';
+    games.forEach(game => {
+      const statusClass = game.passed ? 'status-pass' : 'status-fail';
+      const statusText = game.passed ? '✅ Spełnia zalecane' : '❌ Poniżej zalecanych';
+      html += '<div class="game-row">' +
+        '<div class="game-info">' +
+          '<p class="game-title">' + esc(game.title) + '</p>' +
+          '<p class="game-specs">' + esc(game.specs) + '</p>' +
+        '</div>' +
+        '<span class="game-status ' + statusClass + '">' + statusText + '</span>' +
+      '</div>';
+    });
+    gamesList.innerHTML = html;
+    gamesComparison.style.display = 'block';
   }
 
   function renderResult(result, budget){
@@ -719,74 +818,75 @@
     const { cpu, mobo, ram, gpu, psu, total, requiredPSU } = best;
     const leftover = budget - total;
     const reqRounded = Math.ceil(requiredPSU);
-    const headroomPct = Math.round(((psu.maxPower - requiredPSU) / requiredPSU) * 100);
     const psuFillPct = Math.min(100, Math.round((requiredPSU / psu.maxPower) * 100));
     const gpuSharePct = (gpu.price / total) * 100;
 
-    const parts = [
-      { key: 'cpu',  label: 'CPU',     price: cpu.price,  color: 'var(--copper)' },
-      { key: 'mobo', label: 'Płyta',   price: mobo.price, color: 'var(--clay)' },
-      { key: 'ram',  label: 'RAM',     price: ram.price,  color: 'var(--sage)' },
-      { key: 'gpu',  label: 'GPU',     price: gpu.price,  color: 'var(--copper-bright)' },
-      { key: 'psu',  label: 'Zasilacz',price: psu.price,  color: 'var(--slate)' },
-    ];
+    const legendItems = [
+      { label: 'Procesor', price: cpu.price, color: 'var(--copper)' },
+      { label: 'Płyta gł.', price: mobo.price, color: 'var(--sage)' },
+      { label: 'RAM', price: ram.price, color: 'var(--slate)' },
+      { label: 'Karta graf.', price: gpu.price, color: 'var(--copper-bright)' },
+      { label: 'Zasilacz', price: psu.price, color: 'var(--clay)' },
+    ].map(item => {
+      const pct = ((item.price / total) * 100).toFixed(1);
+      return '<li><span class="legend-dot" style="background:' + item.color + ';"></span>' +
+             '<span>' + item.label + ' (' + pct + '%)</span></li>';
+    }).join('');
 
-    const barSegs = parts.map(p =>
-      '<div class="seg" style="flex-grow:' + p.price + '; background:' + p.color + ';"></div>'
-    ).join('');
+    const barSegments = [
+      { price: cpu.price, color: 'var(--copper)' },
+      { price: mobo.price, color: 'var(--sage)' },
+      { price: ram.price, color: 'var(--slate)' },
+      { price: gpu.price, color: 'var(--copper-bright)' },
+      { price: psu.price, color: 'var(--clay)' },
+    ].map(item => {
+      const w = ((item.price / total) * 100).toFixed(4);
+      return '<div class="seg" style="width:' + w + '%; background:' + item.color + ';"></div>';
+    }).join('');
 
-    const legendItems = parts.map(p =>
-      '<li><span class="legend-dot" style="background:' + p.color + ';"></span>' + p.label + ' ' + zl(p.price) + '</li>'
-    ).join('');
-
-    schematicWrap.innerHTML =
+    schematicWrap.innerHTML = 
       '<div class="schematic">' +
-
         '<div class="title-block">' +
           '<div class="tb-left">' +
-            '<p class="tag">PCB1 &middot; płyta główna</p>' +
+            '<p class="tag">Płyta główna &middot; Szkielet zestawu</p>' +
             '<h2>' + esc(mobo.name) + '</h2>' +
             '<div class="chip-row">' +
-              '<span class="chip">Gniazdo ' + SOCKET_LABEL[mobo.socket] + '</span>' +
+              '<span class="chip">Socket ' + SOCKET_LABEL[mobo.socket] + '</span>' +
               '<span class="chip">' + RAM_LABEL[mobo.ramType] + '</span>' +
             '</div>' +
           '</div>' +
           '<div class="tb-right">' + zl(mobo.price) + '</div>' +
         '</div>' +
-
         '<div class="slots-grid">' +
-
           '<div class="slot cpu" style="--accent-color: var(--copper); animation-delay:0.02s;">' +
             '<div class="slot-head"><span class="slot-ref">U1 &middot; CPU</span><span class="slot-price">' + zl(cpu.price) + '</span></div>' +
             '<p class="slot-name">' + esc(cpu.name) + '</p>' +
             '<p class="slot-spec">Gniazdo ' + SOCKET_LABEL[cpu.socket] + ' &middot; TDP ' + cpu.power + ' W</p>' +
           '</div>' +
-
           '<div class="slot ram" style="--accent-color: var(--sage); animation-delay:0.08s;">' +
             '<div class="slot-head"><span class="slot-ref">DIMM1 &middot; RAM</span><span class="slot-price">' + zl(ram.price) + '</span></div>' +
             '<p class="slot-name">' + esc(ram.name) + '</p>' +
             '<p class="slot-spec">Standard ' + RAM_LABEL[ram.ramType] + '</p>' +
           '</div>' +
-
           '<div class="slot gpu" style="--accent-color: var(--copper-bright); animation-delay:0.14s;">' +
-            '<div class="slot-head"><span class="slot-ref">PCIe1 &middot; GPU</span><span class="slot-price">' + zl(gpu.price) + '</span></div>' +
-            '<p class="slot-name">' + esc(gpu.name) + '</p>' +
-            '<p class="slot-spec">Pobór mocy ' + gpu.power + ' W &middot; ' + gpuSharePct.toFixed(0) + '% ceny zestawu (limit 50%)</p>' +
+            '<div class="slot-head"><span class="slot-ref">PCIe_1 &middot; GPU</span><span class="slot-price">' + zl(gpu.price) + '</span></div>' +
+            '<p class="slot-name">' + esc(gpu.name) + '</p>'
+            '<p class="slot-spec">Pobór mocy: ' + gpu.power + ' W &middot; Udział w koszcie: ' + gpuSharePct.toFixed(0) + '%</p>' +
           '</div>' +
-
-          '<div class="slot psu" style="--accent-color: var(--slate); animation-delay:0.20s;">' +
-            '<div class="slot-head"><span class="slot-ref">PS1 &middot; Zasilacz</span><span class="slot-price">' + zl(psu.price) + '</span></div>' +
+          '<div class="slot psu" style="--accent-color: var(--clay); animation-delay:0.2s;">' +
+            '<div class="slot-head"><span class="slot-ref">ATX &middot; PSU</span><span class="slot-price">' + zl(psu.price) + '</span></div>' +
             '<p class="slot-name">' + esc(psu.name) + '</p>' +
-            '<p class="slot-spec">Wymagane min. ' + reqRounded + ' W (CPU+GPU &times; 2) &middot; zapas +' + headroomPct + '%</p>' +
-            '<div class="psu-bar-track"><div class="psu-bar-fill" style="width:' + psuFillPct + '%;"></div></div>' +
+            '<p class="slot-spec">Moc maksymalna: ' + psu.maxPower + ' W &middot; Wyliczone zapotrzebowanie (X2): ' + reqRounded + ' W</p>' +
+            '<div class="psu-bar-track" title="Obciążenie projektowe zasilacza: ' + psuFillPct + '%">' +
+              '<div class="psu-bar-fill" style="width: ' + psuFillPct + '%; background: var(--clay);"></div>' +
+            '</div>' +
           '</div>' +
-
         '</div>' +
 
         '<div class="breakdown">' +
-          '<p class="breakdown-label">Podział budżetu</p>' +
+          '<p class="breakdown-label">Struktura kosztów</p>' +
           '<div class="breakdown-bar-wrap">' +
-            '<div class="breakdown-bar">' + barSegs + '</div>' +
+            '<div class="breakdown-bar">' + barSegments + '</div>' +
             '<div class="breakdown-marker" style="left:50%;"><span>50%</span></div>' +
           '</div>' +
           '<ul class="breakdown-legend">' + legendItems + '</ul>' +
@@ -802,6 +902,8 @@
         '(przeszukano ' + fmt.format(combosChecked) + ' kombinacji podzespołów).</p>' +
 
       '</div>';
+
+      checkGameRequirements(best);
   }
 
   function esc(str){
@@ -820,11 +922,11 @@
     }
     fieldMsg.textContent = '';
 
-    const result = findBestPC(budget);
-    if (result.best){
-      renderResult(result, budget);
-    } else {
+    const result = findBestConfiguration(budget);
+    if (!result.best) {
       renderError(budget, result.combosChecked);
+    } else {
+      renderResult(result, budget);
     }
   }
 
@@ -833,8 +935,9 @@
     runSearch();
   });
 
+  runSearch();
+
 })();
 </script>
-
 </body>
 </html>
