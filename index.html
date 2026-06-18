@@ -649,7 +649,7 @@
         const compatRams = RAMS.filter(r => r.ramType === mobo.ramType);
         for (const ram of compatRams){
           for (const gpu of GPUS){
-            const requiredPSU = (cpu.power + gpu.power) * 1.5;
+            const requiredPSU = (cpu.power + gpu.power) * 2;
             for (const psu of PSUS){
               combosChecked++;
               if (psu.maxPower < requiredPSU) continue;
