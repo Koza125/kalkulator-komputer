@@ -446,6 +446,83 @@
     margin: 0;
   }
 
+  /* ---------- shop links ---------- */
+  .shop-links{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 11px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+  }
+  .shop-label{
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-right: 2px;
+    flex: 0 0 auto;
+  }
+  .shop-link{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 5px;
+    padding: 3px 9px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.5;
+  }
+  .shop-link::after{
+    content: '↗';
+    font-size: 10px;
+    opacity: 0.7;
+  }
+  .shop-link:hover{ transform: translateY(-1px); }
+  .shop-link:active{ transform: translateY(0); }
+
+  .shop-link.xkom{
+    background: rgba(210, 35, 55, 0.10);
+    border: 1px solid rgba(210, 35, 55, 0.28);
+    color: #f07080;
+  }
+  .shop-link.xkom:hover{
+    background: rgba(210, 35, 55, 0.20);
+    border-color: rgba(210, 35, 55, 0.55);
+  }
+  .shop-link.morele{
+    background: rgba(38, 170, 90, 0.10);
+    border: 1px solid rgba(38, 170, 90, 0.28);
+    color: #5ac880;
+  }
+  .shop-link.morele:hover{
+    background: rgba(38, 170, 90, 0.20);
+    border-color: rgba(38, 170, 90, 0.55);
+  }
+  .shop-link.allegro{
+    background: rgba(255, 90, 0, 0.10);
+    border: 1px solid rgba(255, 90, 0, 0.28);
+    color: #ff8c44;
+  }
+  .shop-link.allegro:hover{
+    background: rgba(255, 90, 0, 0.20);
+    border-color: rgba(255, 90, 0, 0.55);
+  }
+  .shop-link.neo{
+    background: rgba(100, 140, 220, 0.10);
+    border: 1px solid rgba(100, 140, 220, 0.28);
+    color: #8ab0f0;
+  }
+  .shop-link.neo:hover{
+    background: rgba(100, 140, 220, 0.20);
+    border-color: rgba(100, 140, 220, 0.55);
+  }
+
   .psu-bar-track{
     position: relative;
     height: 6px;
@@ -1015,6 +1092,7 @@
               '<span class="chip">Socket ' + SOCKET_LABEL[mobo.socket] + '</span>' +
               '<span class="chip">' + RAM_LABEL[mobo.ramType] + '</span>' +
             '</div>' +
+            shopLinks(mobo.name) +
           '</div>' +
           '<div class="tb-right">' + zl(mobo.price) + '</div>' +
         '</div>' +
@@ -1028,6 +1106,7 @@
             '</div>' +
             '<p class="slot-name">' + esc(cpu.name) + cpuBrandBadge + '</p>' +
             '<p class="slot-spec">Gniazdo ' + SOCKET_LABEL[cpu.socket] + ' &middot; TDP ' + cpu.power + ' W</p>' +
+            shopLinks(cpu.name) +
           '</div>' +
 
           '<div class="slot ram" style="--accent-color: var(--sage); animation-delay:0.08s;">' +
@@ -1037,6 +1116,7 @@
             '</div>' +
             '<p class="slot-name">' + esc(ram.name) + '</p>' +
             '<p class="slot-spec">Standard ' + RAM_LABEL[ram.ramType] + '</p>' +
+            shopLinks(ram.name) +
           '</div>' +
 
           '<div class="slot gpu" style="--accent-color: var(--copper-bright); animation-delay:0.14s;">' +
@@ -1046,6 +1126,7 @@
             '</div>' +
             '<p class="slot-name">' + esc(gpu.name) + '</p>' +
             '<p class="slot-spec">Pobór mocy: ' + gpu.power + ' W &middot; Udział w koszcie: ' + gpuSharePct.toFixed(0) + '%</p>' +
+            shopLinks(gpu.name) +
           '</div>' +
 
           '<div class="slot psu" style="--accent-color: var(--clay); animation-delay:0.2s;">' +
@@ -1055,6 +1136,7 @@
             '</div>' +
             '<p class="slot-name">' + esc(psu.name) + '</p>' +
             '<p class="slot-spec">Moc maksymalna: ' + psu.maxPower + ' W &middot; Wyliczone zapotrzebowanie (×2): ' + reqRounded + ' W</p>' +
+            shopLinks(psu.name) +
             '<div class="psu-bar-track" title="Obciążenie projektowe zasilacza: ' + psuFillPct + '%">' +
               '<div class="psu-bar-fill" style="width: ' + psuFillPct + '%; background: var(--clay);"></div>' +
             '</div>' +
@@ -1083,6 +1165,17 @@
       '</div>';
 
     checkGameRequirements(best);
+  }
+
+  function shopLinks(name){
+    const q = encodeURIComponent(name);
+    return '<div class="shop-links">' +
+      '<span class="shop-label">Kup na:</span>' +
+      '<a class="shop-link xkom"    href="https://www.x-kom.pl/szukaj?q=' + q + '" target="_blank" rel="noopener noreferrer">x-kom</a>' +
+      '<a class="shop-link morele"  href="https://www.morele.net/szukaj/?q=' + q + '" target="_blank" rel="noopener noreferrer">morele</a>' +
+      '<a class="shop-link allegro" href="https://allegro.pl/listing?string=' + q + '" target="_blank" rel="noopener noreferrer">Allegro</a>' +
+      '<a class="shop-link neo"     href="https://www.neo24.pl/search/?SearchTerm=' + q + '" target="_blank" rel="noopener noreferrer">Neo24</a>' +
+    '</div>';
   }
 
   function esc(str){
